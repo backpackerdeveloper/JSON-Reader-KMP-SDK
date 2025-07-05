@@ -1,6 +1,214 @@
 # KMP JSON Reader SDK
 
+[![](https://jitpack.io/v/backpackerdeveloper/JSON-Reader-KMP-SDK.svg)](https://jitpack.io/#backpackerdeveloper/JSON-Reader-KMP-SDK)
+
 A lightweight, cross-platform Kotlin Multiplatform library for reading and parsing JSON files on Android and iOS platforms.
+
+## Technical Documentation
+
+This document provides technical details about the SDK's architecture, implementation, and guidelines for developers.
+
+## Architecture
+
+The SDK follows Clean Architecture principles with a clear separation of concerns:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│  Presentation   │     │     Domain      │     │      Data       │
+│    (API)        │◄────┤   (Use Cases)   │◄────┤  (Repository)   │
+│                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+### Layers
+
+1. **Presentation Layer (API)**
+   - `JsonReader` interface - The main API for client applications
+   - Platform-specific implementations (`JsonReaderImpl`)
+
+2. **Domain Layer**
+   - Use cases for specific operations:
+     - `ReadJsonUseCase`
+     - `ParseJsonUseCase`
+     - `ParseJsonToTypeUseCase`
+   - Models like `JsonResult` for representing operation states
+
+3. **Data Layer**
+   - `JsonRepository` interface and implementations
+   - `FileReader` interface with platform-specific implementations
+   - JSON parsing utilities
+
+## Implementation Details
+
+### Platform-Specific File Reading
+
+The SDK handles file reading differently on each platform:
+
+#### Android
+- Uses `AndroidFileReader` which can read from:
+  - Assets directory using `context.assets.open(path)`
+  - File system using `File(path).readText()`
+
+#### iOS
+- Uses `IosFileReader` which can read from:
+  - Main bundle using `NSBundle.mainBundle.pathForResource()`
+  - File system using `NSString.stringWithContentsOfFile()`
+
+### JSON Parsing
+
+- Common parsing to Map/List structures using Kotlin Serialization
+- Platform-specific parsing to types:
+  - Android: Uses Gson reflection-based parsing
+  - iOS: Not supported (throws `UnsupportedOperationException`)
+
+### Dependency Injection
+
+The SDK uses Koin for dependency injection:
+
+- Common module with shared dependencies
+- Platform-specific modules for Android and iOS
+- Factory pattern for creating instances
+
+## Code Structure
+
+```
+jsonreader/
+├── src/
+│   ├── commonMain/
+│   │   └── kotlin/
+│   │       ├── JsonReaderFactory.kt
+│   │       ├── com/backpackerdevs/jsonreader/
+│   │           ├── JsonReader.kt
+│   │           ├── data/
+│   │           │   └── repository/
+│   │           │       ├── FileReader.kt
+│   │           │       ├── JsonRepositoryImpl.kt
+│   │           ├── di/
+│   │           │   └── KoinModule.kt
+│   │           ├── domain/
+│   │               ├── model/
+│   │               │   └── JsonResult.kt
+│   │               ├── repository/
+│   │               │   └── JsonRepository.kt
+│   │               └── usecase/
+│   │                   ├── ParseJsonToTypeUseCase.kt
+│   │                   ├── ParseJsonUseCase.kt
+│   │                   └── ReadJsonUseCase.kt
+│   ├── androidMain/
+│   │   └── kotlin/
+│   │       ├── JsonReaderFactory.android.kt
+│   │       ├── JsonReaderImpl.android.kt
+│   │       └── com/backpackerdevs/jsonreader/
+│   │           ├── data/
+│   │           │   └── repository/
+│   │           │       ├── AndroidFileReader.kt
+│   │           │       ├── AndroidJsonRepositoryImpl.kt
+│   │           │       └── JsonExtensions.android.kt
+│   │           └── di/
+│   │               └── AndroidModule.kt
+│   └── iosMain/
+│       └── kotlin/
+│           ├── JsonReaderFactory.ios.kt
+│           ├── JsonReaderImpl.ios.kt
+│           └── com/backpackerdevs/jsonreader/
+│               ├── data/
+│               │   └── repository/
+│               │       ├── IosFileReader.kt
+│               │       ├── IosJsonRepositoryImpl.kt
+│               │       └── JsonExtensions.ios.kt
+│               └── di/
+│                   └── IosModule.kt
+```
+
+## Error Handling
+
+The SDK uses a comprehensive error handling approach:
+
+1. **Exception Propagation**:
+   - Platform-specific exceptions are caught and wrapped in common exceptions
+   - File reading exceptions include detailed error messages
+
+2. **Result Wrapping**:
+   - All operations return results wrapped in `JsonResult` sealed class
+   - States include `Loading`, `Success`, and `Error`
+
+3. **Logging**:
+   - Production builds have minimal logging for performance
+   - Debug builds include detailed logs for troubleshooting
+
+## Developer Guidelines
+
+### Adding New Features
+
+1. **Add to Common Layer First**:
+   - Start by defining interfaces in the common module
+   - Implement common logic that's platform-independent
+
+2. **Implement Platform-Specific Code**:
+   - Add platform-specific implementations in respective modules
+   - Use `expect`/`actual` declarations for platform-specific behavior
+
+3. **Update Tests**:
+   - Add tests for common functionality
+   - Add platform-specific tests for each implementation
+
+### Versioning
+
+The SDK follows semantic versioning:
+
+- **MAJOR**: Breaking API changes
+- **MINOR**: New features, backward compatible
+- **PATCH**: Bug fixes, backward compatible
+
+### Testing Guidelines
+
+1. **Unit Tests**:
+   - Test each component in isolation
+   - Mock dependencies using interfaces
+
+2. **Integration Tests**:
+   - Test the interaction between components
+   - Use real implementations when possible
+
+3. **Platform-Specific Tests**:
+   - Test Android-specific code with Android instrumented tests
+   - Test iOS-specific code with iOS unit tests
+
+## Performance Considerations
+
+- **Memory Usage**: The SDK avoids loading large JSON files into memory at once
+- **Threading**: File operations are performed on background threads using coroutines
+- **Caching**: No built-in caching to keep the SDK lightweight and focused
+
+## Security Considerations
+
+- **File Access**: The SDK only reads files, no writing operations
+- **Input Validation**: JSON parsing includes validation and error handling
+- **Error Messages**: Error messages don't expose sensitive information
+
+## Compatibility
+
+- **Android**: API 24+ (Android 7.0 Nougat)
+- **iOS**: iOS 14.0+
+- **Kotlin**: 2.0.0+
+- **Kotlin Coroutines**: 1.7.0+
+
+## License
+
+This library is licensed under the MIT License.
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add your changes
+4. Write tests for your changes
+5. Submit a pull request
+
+Please ensure your code follows the existing style and passes all tests.
 
 ## Overview
 

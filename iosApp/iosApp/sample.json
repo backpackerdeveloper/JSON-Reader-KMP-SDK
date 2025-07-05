@@ -1,0 +1,26 @@
+{
+    "title": "Sample JSON File",
+    "description": "This is a sample JSON file for testing the KMP JSON Reader library",
+    "items": [
+        {
+            "id": 1,
+            "name": "Item 1",
+            "description": "First test item"
+        },
+        {
+            "id": 2,
+            "name": "Item 2",
+            "description": "Second test item"
+        },
+        {
+            "id": 3,
+            "name": "Item 3",
+            "description": "Third test item"
+        }
+    ],
+    "metadata": {
+        "created": "2024-07-04",
+        "version": "1.0.0",
+        "author": "KMP JSON Reader"
+    }
+} 
